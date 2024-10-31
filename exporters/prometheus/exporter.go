@@ -541,7 +541,17 @@ func addExemplars[N int64 | float64](m prometheus.Metric, exemplars []metricdata
 func attributesToLabels(attrs []attribute.KeyValue) prometheus.Labels {
 	labels := make(map[string]string)
 	for _, attr := range attrs {
-		labels[string(attr.Key)] = attr.Value.Emit()
+		val := attr.Value.Emit()
+		// prometheus client uses utf8.RuneCountInString which counts
+		// runes more strictly, and will only ever return a smaller count
+		// than this.
+		if len([]rune(val)) > prometheus.ExemplarMaxRunes {
+			// This could trim to a strictly invalid UTF8 string, but
+			// seems to be the pragmatic choice (prometheus client
+			// uses utf8.RuneCountInString which
+			val = string([]rune(val)[:prometheus.ExemplarMaxRunes])
+		}
+		labels[string(attr.Key)] = val
 	}
 	return labels
 }
