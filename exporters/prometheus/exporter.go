@@ -541,6 +541,7 @@ func addExemplars[N int64 | float64](m prometheus.Metric, exemplars []metricdata
 func attributesToLabels(attrs []attribute.KeyValue) prometheus.Labels {
 	labels := make(map[string]string)
 	for _, attr := range attrs {
+		key := strings.ReplaceAll(string(attr.Key), ".", "_")
 		val := attr.Value.Emit()
 		// prometheus client uses utf8.RuneCountInString which counts
 		// runes more strictly, and will only ever return a smaller count
@@ -551,7 +552,7 @@ func attributesToLabels(attrs []attribute.KeyValue) prometheus.Labels {
 			// uses utf8.RuneCountInString which
 			val = string([]rune(val)[:prometheus.ExemplarMaxRunes])
 		}
-		labels[string(attr.Key)] = val
+		labels[key] = val
 	}
 	return labels
 }
